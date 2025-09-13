@@ -65,14 +65,17 @@
   
   <div id="app"></div>
 
+  <!-- React & ReactDOM via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel to transpile JSX in the browser -->
   <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.18.0/babel.min.js"></script>
   
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // Appointment Form Component
+    // AppointmentForm Component
     const AppointmentForm = ({ saveAppointment, appointmentToEdit }) => {
       const [formData, setFormData] = useState({
         title: '',
@@ -82,6 +85,7 @@
         description: ''
       });
 
+      // Fill form with appointment data when editing
       useEffect(() => {
         if (appointmentToEdit) {
           setFormData(appointmentToEdit);
@@ -143,7 +147,7 @@
       );
     };
 
-    // Appointment List Component
+    // AppointmentList Component
     const AppointmentList = ({ appointments, deleteAppointment, editAppointment }) => {
       return (
         <div className="appointment-list">
