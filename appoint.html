@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Appointment Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    h1 {
+      padding: 20px;
+      background-color: #f3f3f3;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 300px;
+      margin: 20px auto;
+    }
+
+    input, textarea, button {
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    table th, table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+
+    .appointment-list, .calendar-view {
+      margin-top: 20px;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hospital Appointment Management</h1>
+  
+  <div id="app"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7.18.0/babel.min.js"></script>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Appointment Form Component
+    const AppointmentForm = ({ saveAppointment, appointmentToEdit }) => {
+      const [formData, setFormData] = useState({
+        title: '',
+        date: '',
+        time: '',
+        patientName: '',
+        description: ''
+      });
+
+      useEffect(() => {
+        if (appointmentToEdit) {
+          setFormData(appointmentToEdit);
+        }
+      }, [appointmentToEdit]);
+
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      };
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        saveAppointment(formData);
+        setFormData({ title: '', date: '', time: '', patientName: '', description: '' }); // reset form
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="title"
+            placeholder="Title"
+            value={formData.title}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="text"
+            name="patientName"
+            placeholder="Patient's Name"
+            value={formData.patientName}
+            onChange={handleChange}
+            required
+          />
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+          />
+          <button type="submit">{appointmentToEdit ? 'Update' : 'Create'} Appointment</button>
+        </form>
+      );
+    };
+
+    // Appointment List Component
+    const AppointmentList = ({ appointments, deleteAppointment, editAppointment }) => {
+      return (
+        <div className="appointment-list">
+          <h3>Upcoming Appointments</h3>
+          <ul>
+            {appointments.map((appointment, index) => (
+              <li key={index}>
+                <strong>{appointment.title}</strong>
+                <p>{appointment.patientName}</p>
+                <p>{appointment.date} at {appointment.time}</p>
+                <p>{appointment.description}</p>
+                <button onClick={() => editAppointment(appointment)}>Edit</button>
+                <button onClick={() => deleteAppointment(index)}>Delete</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    };
+
+    // Calendar View Component
+    const CalendarView = ({ appointments }) => {
+      const groupAppointmentsByDate = () => {
+        return appointments.reduce((acc, appointment) => {
+          const date = appointment.date;
+          if (!acc[date]) acc[date] = [];
+          acc[date].push(appointment);
+          return acc;
+        }, {});
+      };
+
+      const groupedAppointments = groupAppointmentsByDate();
+
+      return (
+        <div className="calendar-view">
+          <h3>Calendar View</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Appointments</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.keys(groupedAppointments).map((date) => (
+                <tr key={date}>
+                  <td>{date}</td>
+                  <td>
+                    <ul>
+                      {groupedAppointments[date].map((appointment, index) => (
+                        <li key={index}>{appointment.title} - {appointment.patientName}</li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
+    // Main App Component
+    const App = () => {
+      const [appointments, setAppointments] = useState([]);
+      const [appointmentToEdit, setAppointmentToEdit] = useState(null);
+
+      // Load appointments from localStorage
+      useEffect(() => {
+        const savedAppointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        setAppointments(savedAppointments);
+      }, []);
+
+      // Save appointments to localStorage
+      useEffect(() => {
+        localStorage.setItem('appointments', JSON.stringify(appointments));
+      }, [appointments]);
+
+      const saveAppointment = (appointment) => {
+        if (appointmentToEdit) {
+          const updatedAppointments = appointments.map((apt) =>
+            apt === appointmentToEdit ? appointment : apt
+          );
+          setAppointments(updatedAppointments);
+        } else {
+          setAppointments([...appointments, appointment]);
+        }
+        setAppointmentToEdit(null);
+      };
+
+      const deleteAppointment = (index) => {
+        const updatedAppointments = appointments.filter((_, i) => i !== index);
+        setAppointments(updatedAppointments);
+      };
+
+      const editAppointment = (appointment) => {
+        setAppointmentToEdit(appointment);
+      };
+
+      return (
+        <div>
+          <AppointmentForm saveAppointment={saveAppointment} appointmentToEdit={appointmentToEdit} />
+          <AppointmentList appointments={appointments} deleteAppointment={deleteAppointment} editAppointment={editAppointment} />
+          <CalendarView appointments={appointments} />
+        </div>
+      );
+    };
+
+    // Render the app
+    ReactDOM.render(<App />, document.getElementById('app'));
+  </script>
+</body>
+</html>
